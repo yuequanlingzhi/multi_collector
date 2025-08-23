@@ -1,0 +1,14 @@
+MANIFEST.in
+README.txt
+setup.py
+pymoduleconnector/__init__.py
+pymoduleconnector/ids.py
+pymoduleconnector/moduleconnector.py
+pymoduleconnector/version.py
+pymoduleconnector.egg-info/PKG-INFO
+pymoduleconnector.egg-info/SOURCES.txt
+pymoduleconnector.egg-info/dependency_links.txt
+pymoduleconnector.egg-info/entry_points.txt
+pymoduleconnector.egg-info/not-zip-safe
+pymoduleconnector.egg-info/requires.txt
+pymoduleconnector.egg-info/top_level.txt

@@ -1,0 +1,8 @@
+opencv_python==4.5.5.64
+pygrabber==0.1
+scipy
+openni
+pyserial 
+configobj 
+matplotlib
+PyQt5

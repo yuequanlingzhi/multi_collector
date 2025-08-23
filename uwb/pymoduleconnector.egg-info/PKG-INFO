@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: pymoduleconnector
+Version: 1.6.3
+Summary: A Python wrapper for XeThru ModuleConnector
+Home-page: http://community.xethru.com
+Author: Novelda AS
+Author-email: support@xethru.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: Microsoft :: Windows
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Provides-Extra: auto
+
+UNKNOWN
+
