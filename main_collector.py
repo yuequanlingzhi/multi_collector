@@ -8,7 +8,16 @@ import scipy.io as sio
 from typing import List, Dict, Tuple, Any, Type
 from openni import openni2
 
-from BaseDevice import BaseDevice, VideoDevice, OrbbecDevice, PPGDevice, UwbDevice, MilliWaveDevice, IRDevice
+# from BaseDevice import BaseDevice, VideoDevice, OrbbecDevice, PPGDevice, UwbDevice, MilliWaveDevice, OpencvDevice
+from BaseDevice.BaseDevice import BaseDevice
+from BaseDevice.VideoDevice import VideoDevice
+from BaseDevice.OrbbecDevice import OrbbecDevice
+from BaseDevice.PPGDevice import PPGDevice
+from BaseDevice.UwbDevice import UwbDevice
+from BaseDevice.MilliWaveDevice import MilliWaveDevice
+from BaseDevice.OpencvDevice import OpencvDevice
+from BaseDevice.FFmpegDevice import FFmpegDevice
+
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout,
     QHBoxLayout, QFileDialog, QMessageBox, QGridLayout, QGroupBox, QComboBox
@@ -19,37 +28,29 @@ from pygrabber.dshow_graph import FilterGraph
 
 camera_params={
     "Logitech StreamCam": {
-        'rtbufsize': str(1080 * 1920 * 3),
         "frame_size":(1080, 1920, 3),
-        "frame_rate": 60,
-        "encode_type":{
-            #  "pixel_format":"yuyv422"
-            "vcodec":"mjpeg"
-        }
+        "frame_rate": 30,
+        "encode_type":"mjpeg",
     },
     "USB Camera":{
-        'rtbufsize': str(1080 * 1920 * 3),
         "frame_size":(1080, 1920, 3),
         "frame_rate": 30,
-        "encode_type":{
-             "vcodec":"mjpeg"
-        }
+        "encode_type":"mjpeg",
     },
     "HD USB Camera":{
-        'rtbufsize': str(4*1080 * 1920 * 3),
-        "frame_size":(720, 1280, 3),
+        "frame_size":(1080, 1920, 3),
         "frame_rate": 120,
-        "encode_type":{
-              "vcodec":"mjpeg"
-        }
+        "encode_type":"mjpeg",
     },
     "HD Pro Webcam C920":{
-        'rtbufsize': str(1080 * 1920 * 3),
         "frame_size":(1080, 1920, 3),
         "frame_rate": 30,
-        "encode_type":{
-             "vcodec":"mjpeg"
-        }
+        "encode_type":"mjpeg",
+    },
+    "LRCP  USB2.0":{
+        "frame_size":(1080, 1920, 3),
+        "frame_rate": 30,
+        "encode_type":"mjpeg",
     }
 }
 
@@ -66,6 +67,7 @@ class MainWindow(QWidget):
         self.save_dir = data_dir
         print('开始初始化')
         self.init_devices()
+        BaseDevice.start_devices()
         print("所有设备初始化完成")
         self.device_list : List[BaseDevice] = BaseDevice.devices.values()
         print(self.device_list)
@@ -83,7 +85,7 @@ class MainWindow(QWidget):
         # 定时器刷新摄像头画面
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frames)
-        self.timer.start(50)  # 约33fps刷新
+        self.timer.start(33)  # 约33fps刷新
 
     def init_ui(self):
         layout = QVBoxLayout()
@@ -218,7 +220,9 @@ class MainWindow(QWidget):
         # 定义每个设备停止录制并保存的线程函数
         BaseDevice.stop_record()
         self.recording = False
-        
+        self.record_timer.stop()
+        self.record_seconds = 0
+        self.update_record_time() 
         for device in self.device_list:
             device.save_data()
         self.btn_start.setEnabled(True)
@@ -243,15 +247,15 @@ class MainWindow(QWidget):
         camera_devices_list = graph.get_input_devices()
         devices_configs : Dict[Type[BaseDevice], List[Dict[str, Any]]]
         devices_configs = {
-            VideoDevice:[
+            FFmpegDevice:[
                 {
-                "device_name":f"rgb_camera{i}", 
+                "device_name":f"rgb_camera{i}-{camera_name}", 
                 "camera_name":camera_name, 
                 **camera_params[camera_name]
                 } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
             ],
             OrbbecDevice: [
-               {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
+            #    {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
             ],
             PPGDevice: [
                # {"device_name":"ppg", "port":"COM6", "frame_rate":1000}
@@ -262,26 +266,25 @@ class MainWindow(QWidget):
             MilliWaveDevice: [
                # {"device_name":"milliwave", "port":"COM13", "frame_rate":10, "baud_rate":2000000}
             ],
-            IRDevice:[
-                #  {"device_name":"IR_camera", "camera_name": "LRCP  USB2.0", "frame_size":(1080, 1920, 3), "frame_rate": 30},
-            ]
+            # OpencvDevice:[
+            #     #  {"device_name":"IR_camera", "camera_name": "LRCP  USB2.0", "frame_size":(1080, 1920, 3), "frame_rate": 30, 'exposure':-6},
+            #     # {"device_name":"Logitech_cam", "camera_name": "HD Pro Webcam C920", "frame_size":(1080, 1900, 3), "frame_rate": 30},
+            # ]
+            # FFmpegDevice:[
+            #     {"device_name":"Logitech_cam", "camera_name": "HD Pro Webcam C920", "frame_size":(1080, 1920, 3), "frame_rate": 30, "encode_type":"mjpeg"},
+            # ]
 
         }
 
         for device_class, device_configs in devices_configs.items():
             for device_config in device_configs:
                 device_class(**device_config)
-            if device_class.__name__ == "VideoDevice" and len(device_configs) > 0:
-                time.sleep(2)
-            if device_class.__name__ == "UwbDevice" and len(device_configs) > 0:
-                time.sleep(3)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = MainWindow()
     win.show()
-    sys.exit(app.exec_())
-    
+    sys.exit(app.exec_()) 
     
 
 
