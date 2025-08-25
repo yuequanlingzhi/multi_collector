@@ -14,6 +14,7 @@ class FFmpegDevice(BaseDevice):
         frame_size = kwargs.get('frame_size')
         frame_rate = kwargs.get('frame_rate')
         encode_type = kwargs.get("encode_type", "mjpeg")
+        quality = kwargs.get("quality", 10)
         meta_info = kwargs.get('meta_info',{})
         super().__init__(device_name=device_name,frame_rate=frame_rate)
         self.camera_name = camera_name
@@ -36,7 +37,7 @@ class FFmpegDevice(BaseDevice):
             '-vcodec', 'mjpeg',
             '-i', f'video={self.camera_name}',
             '-f', 'mjpeg',
-            '-q:v', '1',
+            '-q:v', f'{quality}',
             '-'
         ]
         self.frame_buffer = queue.Queue(maxsize=1)
@@ -57,7 +58,7 @@ class FFmpegDevice(BaseDevice):
     
     def reader(self,pipe,btys_queue):
         while self.running:
-            data = pipe.read(1024*1)
+            data = pipe.read(1024*5)
             if not data:
                 break
             btys_queue.put(data)
@@ -82,18 +83,18 @@ class FFmpegDevice(BaseDevice):
                     break
                 else:
                     continue
-            
             self.bty_buffer += chunk
-
+            
             while True:
                 start_marker = self.bty_buffer.find(b'\xff\xd8')
                 end_marker = self.bty_buffer.find(b'\xff\xd9')
                 if start_marker != -1 and end_marker != -1 and start_marker < end_marker:
                     frame_data = self.bty_buffer[start_marker:end_marker + 2]
+                    timestamp = time.time()
                     self.bty_buffer = self.bty_buffer[end_marker + 2:]
                     if self.frame_buffer.full():
                         self.frame_buffer.get()
-                    self.frame_buffer.put((frame_data, time.time()))
+                    self.frame_buffer.put((frame_data, timestamp))
                 else:
                     break
     
@@ -153,7 +154,6 @@ class FFmpegDevice(BaseDevice):
         folder = os.path.join(BaseDevice.save_floder,self.device_name)
         os.makedirs(folder, exist_ok=True)
         start = time.time()
-        print(f"[{self.device_name}]转换数据格式耗时：{time.time() - start:.4f}s")
         l = len(self.timestamps)
         filename = os.path.join(folder, f"{self.timestamps[0]}f{self.frame_rate}c{l}.npz")
 

@@ -24,22 +24,25 @@ conda activate multi_collector
 ## 安装依赖
 
 1. pip 安装部分依赖
+
    ```
    pip install -r requirements.txt
    ```
-
 2. 本地安装pyav
+
    ```
    pip install av-9.0.1-cp36-cp36m-win_amd64.whl
    ```
-3. 安装pymoduleconnector
+3. 安装pymoduleconnector(UWB 设备需求)
+
    ```
    cd uwb
    python setup.py install
    cd ../
    ```
 4. 配置ffmpeg
-将下列路径添加至环境变量
+   将下列路径添加至环境变量
+
    ```
    ./ffmpeg-4.3.2-2021-02-27-full_build-shared/bin
    ./ffmpeg-4.3.2-2021-02-27-full_build-shared/lib

@@ -26,31 +26,37 @@ from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap
 from pygrabber.dshow_graph import FilterGraph
 
+QUALITY = 10
 camera_params={
     "Logitech StreamCam": {
         "frame_size":(1080, 1920, 3),
         "frame_rate": 30,
         "encode_type":"mjpeg",
+        "quality": QUALITY,
     },
     "USB Camera":{
         "frame_size":(1080, 1920, 3),
         "frame_rate": 30,
         "encode_type":"mjpeg",
+        "quality": QUALITY,
     },
     "HD USB Camera":{
         "frame_size":(1080, 1920, 3),
         "frame_rate": 120,
         "encode_type":"mjpeg",
+        "quality": QUALITY,
     },
     "HD Pro Webcam C920":{
         "frame_size":(1080, 1920, 3),
         "frame_rate": 30,
         "encode_type":"mjpeg",
+        "quality": QUALITY,
     },
     "LRCP  USB2.0":{
         "frame_size":(1080, 1920, 3),
         "frame_rate": 30,
         "encode_type":"mjpeg",
+        "quality": QUALITY,
     }
 }
 
@@ -85,7 +91,7 @@ class MainWindow(QWidget):
         # 定时器刷新摄像头画面
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frames)
-        self.timer.start(33)  # 约33fps刷新
+        self.timer.start(50)  # 约33fps刷新
 
     def init_ui(self):
         layout = QVBoxLayout()
@@ -164,7 +170,6 @@ class MainWindow(QWidget):
     def update_frames(self):
         frames = [device.get_current_data() for device in self.device_list]
         try:
-            
             for label_name, frame in zip(self.labels.keys(), frames):
                 if frame is not None:
                     if label_name in ["orbbec_depth_camera","uwb","milliwave"]:
@@ -244,16 +249,19 @@ class MainWindow(QWidget):
     def init_devices(self):
         # 初始化设备 
         graph = FilterGraph()
-        camera_devices_list = graph.get_input_devices()
+        try:
+            camera_devices_list = graph.get_input_devices()
+        except Exception as e:
+            camera_devices_list = []
         devices_configs : Dict[Type[BaseDevice], List[Dict[str, Any]]]
         devices_configs = {
-            FFmpegDevice:[
-                {
-                "device_name":f"rgb_camera{i}-{camera_name}", 
-                "camera_name":camera_name, 
-                **camera_params[camera_name]
-                } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
-            ],
+            # FFmpegDevice:[
+            #     {
+            #     "device_name":f"rgb_camera{i}{camera_name}", 
+            #     "camera_name":camera_name, 
+            #     **camera_params[camera_name]
+            #     } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
+            # ],
             OrbbecDevice: [
             #    {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
             ],
@@ -264,7 +272,7 @@ class MainWindow(QWidget):
                # {"device_name":"uwb", "port":"COM7", "frame_rate":200}
             ],
             MilliWaveDevice: [
-               # {"device_name":"milliwave", "port":"COM13", "frame_rate":10, "baud_rate":2000000}
+               {"device_name":"milliwave", "port":"COM8", "frame_rate":10, "baud_rate":2000000}
             ],
             # OpencvDevice:[
             #     #  {"device_name":"IR_camera", "camera_name": "LRCP  USB2.0", "frame_size":(1080, 1920, 3), "frame_rate": 30, 'exposure':-6},
