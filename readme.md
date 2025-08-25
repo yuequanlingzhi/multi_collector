@@ -7,7 +7,7 @@ Multi_collerctor是HCC用于采集数据集的多模态数据采集脚本，能�
 ## 克隆仓库
 
 ```
-https://github.com/yuequanlingzhi/multi_collector.git
+git clone https://github.com/yuequanlingzhi/multi_collector.git
 cd multi_collector
 ```
 
