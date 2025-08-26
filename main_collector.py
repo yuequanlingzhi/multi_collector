@@ -47,6 +47,8 @@ camera_params={
         "quality": QUALITY,
     },
     "HD Pro Webcam C920":{
+        "ID1": r"@device_pnp_\\?\usb#vid_046d&pid_082d&mi_00#6&8d48e5e&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global",
+        "ID2": r"@device_pnp_\\?\usb#vid_046d&pid_082d&mi_00#6&103b5be6&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global",
         "frame_size":(1080, 1920, 3),
         "frame_rate": 30,
         "encode_type":"mjpeg",
@@ -102,18 +104,43 @@ class MainWindow(QWidget):
         self.meta_fields = {
             "姓名": QLineEdit(),
             "年龄": QLineEdit(),
+            "性别": QComboBox(),  #(男/女)两选一
             "身高(cm)": QLineEdit(),
             "体重(kg)": QLineEdit(),
+            "心率": QLineEdit(),
+            "血压（高压）": QLineEdit(),
+            "血压（低压）": QLineEdit(),
             "状态": QComboBox(),    #(平静/运动/运动后/休息)四选一
             "备注": QLineEdit()
         }
 
         self.meta_fields["状态"].addItems(["平静", "运动", "运动后", "休息"])
+        self.meta_fields["性别"].addItems(["男", "女"])
         row = 0
-        for label, widget in self.meta_fields.items():
-            meta_layout.addWidget(QLabel(label), row, 0)
-            meta_layout.addWidget(widget, row, 1)
-            row += 1
+        col = 0
+        for label_text, widget in self.meta_fields.items():
+            # 创建水平布局存放“标签 + 控件”
+            field_layout = QHBoxLayout()
+            field_layout.setContentsMargins(0, 0, 0, 0)
+            field_layout.addWidget(QLabel(label_text))
+            field_layout.addWidget(widget, 1)  # 1 表示伸缩系数
+
+            # 创建容器 widget 包裹这个 layout
+            container = QWidget()
+            container.setLayout(field_layout)
+
+            # 放入 grid 的对应位置
+            meta_layout.addWidget(container, row, col)
+
+            # 每行最多两个，col 0 -> 1，然后换行
+            col += 1
+            if col == 2:
+                col = 0
+                row += 1
+
+        # 如果最后一个 row 只有一个字段，右边留空
+        if col == 1:
+            meta_layout.addWidget(QWidget(), row, 1)  # 占位空白
 
         meta_group.setLayout(meta_layout)
         layout.addWidget(meta_group)
@@ -203,15 +230,29 @@ class MainWindow(QWidget):
         self.record_timer.start(1000)  # 每秒更新一次
         # 通过meta_fileds获取元数据
         user_name = self.meta_fields["姓名"].text()
+        user_age = self.meta_fields["年龄"].text()
+        user_gender = self.meta_fields["性别"].currentText()
+        user_blood_pressure_high = self.meta_fields["血压（高压）"].text()
+        user_blood_pressure_low = self.meta_fields["血压（低压）"].text()
+        user_heart_rate = self.meta_fields["心率"].text()
         user_state = self.meta_fields["状态"].currentText()
+        meta_data = {
+            "姓名": user_name,
+            "年龄": user_age,
+            "性别": user_gender,
+            "血压（高压）": user_blood_pressure_high,
+            "血压（低压）": user_blood_pressure_low,
+            "心率": user_heart_rate,
+            "状态": user_state
+        }
         if user_name is None:
             user_name = "unknown"
-        BaseDevice.register_user_meta_data(self.save_dir,user_name, user_state)
+        BaseDevice.register_user_meta_data(self.save_dir,meta_data)
         # 先保存元数据到txt
         meta_path = os.path.join(self.save_dir, user_name ,f"metadata.txt")
         with open(meta_path, 'w', encoding='utf-8') as f:
             for k, widget in self.meta_fields.items():
-                if k == "状态":
+                if k == "状态" or k == "性别":
                     continue
                 f.write(f"{k}: {widget.text()}\n")
         print(f"元数据保存到 {meta_path}")
@@ -253,6 +294,7 @@ class MainWindow(QWidget):
             camera_devices_list = graph.get_input_devices()
         except Exception as e:
             camera_devices_list = []
+        print("检测到的摄像头设备：", camera_devices_list)
         devices_configs : Dict[Type[BaseDevice], List[Dict[str, Any]]]
         devices_configs = {
             FFmpegDevice:[
@@ -263,16 +305,16 @@ class MainWindow(QWidget):
                 } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
             ],
             OrbbecDevice: [
-            #    {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
+               {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
             ],
             PPGDevice: [
-            #    {"device_name":"ppg", "port":"COM9", "frame_rate":1000}  
+               {"device_name":"ppg", "port":"COM4", "frame_rate":1000}  
             ],
             UwbDevice: [
-               # {"device_name":"uwb", "port":"COM7", "frame_rate":200}
+               {"device_name":"uwb", "port":"COM6", "frame_rate":200}
             ],
             MilliWaveDevice: [
-            #    {"device_name":"milliwave", "port":"COM8", "frame_rate":110, "baud_rate":2000000}
+            #    {"device_name":"milliwave", "port":"COM5", "frame_rate":110, "baud_rate":2000000}
             ],
             # OpencvDevice:[
             #     #  {"device_name":"IR_camera", "camera_name": "LRCP  USB2.0", "frame_size":(1080, 1920, 3), "frame_rate": 30, 'exposure':-6},

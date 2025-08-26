@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 from BaseDevice.util.RppgCollector import RppgCollector
 from BaseDevice.BaseDevice import BaseDevice
-
+import os
+import time
 class PPGDevice(BaseDevice):
     def __init__(self, **kwargs):
         device_name = kwargs.get("device_name")
@@ -22,8 +23,9 @@ class PPGDevice(BaseDevice):
         self.rppg_collector = RppgCollector(self.port)
         while self.running:
             try:
-                data = self.rppg_collector.read()  # 返回[(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp)] 长度为4
+                data = self.rppg_collector.read(len=6) # 返回[(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp)] 长度为4
                 if data is None:
+                    print('asdsad')
                     print(f"[{self.device_name}] 读取帧失败")
                     continue
                 if self.one_frame is None:
@@ -54,6 +56,33 @@ class PPGDevice(BaseDevice):
             except:
                 continue
         self.reading_buffer = False
+
+    def _save_data_all(self):
+        while self.reading_buffer:
+            time.sleep(0.1)
+        if self.data is None:
+            print(f"[{self.device_name}] 无数据保存")
+            return
+        folder = os.path.join(BaseDevice.save_floder,self.device_name)
+        os.makedirs(folder, exist_ok=True)
+        start = time.time()
+        print(f"[{self.device_name}]转换数据格式耗时：{time.time() - start:.4f}s")
+        l = len(self.timestamps)
+        filename = os.path.join(folder, f"{self.timestamps[0]}f{self.frame_rate}c{l}.npz")
+
+        # 保存多个变量
+        np.savez(
+            filename,
+            device_name=self.device_name,
+            frame_rate=self.frame_rate,
+            timestamps=np.array(self.timestamps,dtype=np.float64),
+            frames=self.data[:l],
+            meta_info=BaseDevice.meta_data
+        )
+        print(f"[{self.device_name}] 数据保存到 {filename}, 帧长度为{l}，整体耗时：{time.time() - start:.4f}s")
+        del self.data
+        del self.timestamps
+        self.ini_data_buffer()
 
     def get_current_data(self):
         return self.get_current_data_help()

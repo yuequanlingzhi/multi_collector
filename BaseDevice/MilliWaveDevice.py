@@ -12,12 +12,10 @@ class MilliWaveDevice(BaseDevice):
     def __init__(self, **kwargs):
         device_name = kwargs.get("device_name")
         frame_rate = kwargs.get("frame_rate", 10)
-        meta_info = kwargs.get("meta_info")
         port = kwargs.get("port")
         baud_rate = kwargs.get("baud_rate", 2000000)
         super().__init__(device_name, frame_rate=frame_rate)
         self.device_name = device_name
-        self.meta_info = meta_info
         self.port = port
         self.baud_rate = baud_rate
         self.current = None

@@ -8,6 +8,7 @@ import numpy as np
 from BaseDevice.BaseDevice import BaseDevice
 av.logging.set_level(av.logging.ERROR)
 class FFmpegDevice(BaseDevice):
+    logit_c920_id = 1
     def __init__(self, **kwargs):
         device_name = kwargs.get('device_name')
         camera_name = kwargs.get('camera_name')
@@ -15,12 +16,15 @@ class FFmpegDevice(BaseDevice):
         frame_rate = kwargs.get('frame_rate')
         encode_type = kwargs.get("encode_type", "mjpeg")
         quality = kwargs.get("quality", 10)
-        meta_info = kwargs.get('meta_info',{})
         super().__init__(device_name=device_name,frame_rate=frame_rate)
         self.camera_name = camera_name
+        if self.camera_name == "HD Pro Webcam C920":
+            self.camera_name_ = kwargs.get(f"ID{FFmpegDevice.logit_c920_id}")
+            FFmpegDevice.logit_c920_id += 1
+        else:
+            self.camera_name_ = self.camera_name
+        self.camera_name_ = f'video={self.camera_name_}'
         self.frame_size = frame_size
-        self.meta_info = meta_info
-        self.meta_info['camera_name'] = camera_name
         self.encode_type = encode_type
         self.show_fps = False
         self.current = None
@@ -35,7 +39,7 @@ class FFmpegDevice(BaseDevice):
             '-video_size', f'{w}x{h}',
             '-framerate', f'{self.frame_rate}',
             '-vcodec', 'mjpeg',
-            '-i', f'video={self.camera_name}',
+            '-i', self.camera_name_,
             '-f', 'mjpeg',
             '-q:v', f'{quality}',
             '-'
@@ -165,10 +169,10 @@ class FFmpegDevice(BaseDevice):
             filename,
             device_name=self.device_name,
             frame_rate=self.frame_rate,
-            timestamp=self.timestamps,
+            timestamps=np.array(self.timestamps,dtype=np.float64),
             frames=self.data,
             frame_lens = self.frame_lens,
-            meta_info=self.meta_info
+            meta_info=BaseDevice.meta_data
         )
         print(f"[{self.device_name}] 数据保存到 {filename}, 帧长度为{l}，整体耗时：{time.time() - start:.4f}s")
         del self.data

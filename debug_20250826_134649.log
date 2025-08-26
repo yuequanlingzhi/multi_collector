@@ -1,0 +1,11 @@
+33.631428 : GetOverlappedResult return error: 由于线程退出或应用程序请求，已中止 I/O 操作。
+
+33.631428 : do_single_read failed
+
+33.632900 : io_read() returned negative: 
+
+33.632900 : Reader is bailing out
+
+40.693253 : call to WriteFile failed -- closing file -- 设备不识别此命令。
+
+40.694256 : Failed to write all bytes to module, expected bytes written: 13, actual bytes written: 0

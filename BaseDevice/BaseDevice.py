@@ -85,7 +85,19 @@ class BaseDevice:
         return latest_start_timestamp
 
     @staticmethod
-    def register_user_meta_data(save_dir,user_name,user_state):
+    def register_user_meta_data(save_dir,meta_data):
+        # meta_data = {
+        #     "姓名": user_name,
+        #     "年龄": user_age,
+        #     "性别": user_gender,
+        #     "血压（高压）": user_blood_pressure_high,
+        #     "血压（低压）": user_blood_pressure_low,
+        #     "心率": user_heart_rate,
+        #     "状态": user_state
+        # }
+        user_name = meta_data.get("姓名")
+        user_state = meta_data.get("状态")
+        BaseDevice.meta_data = meta_data
         BaseDevice.save_floder = os.path.join(save_dir,user_name,user_state)
         print(f"保存路径为：{BaseDevice.save_floder}")
         os.makedirs(BaseDevice.save_floder, exist_ok=True)
@@ -163,9 +175,9 @@ class BaseDevice:
             filename,
             device_name=self.device_name,
             frame_rate=self.frame_rate,
-            timestamps=self.timestamps,
+            timestamps=np.array(self.timestamps,dtype=np.float64),
             frames=self.data[:l],
-            meta_info=self.meta_info
+            meta_info=BaseDevice.meta_data
         )
         print(f"[{self.device_name}] 数据保存到 {filename}, 帧长度为{l}，整体耗时：{time.time() - start:.4f}s")
         del self.data
