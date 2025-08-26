@@ -255,24 +255,24 @@ class MainWindow(QWidget):
             camera_devices_list = []
         devices_configs : Dict[Type[BaseDevice], List[Dict[str, Any]]]
         devices_configs = {
-            # FFmpegDevice:[
-            #     {
-            #     "device_name":f"rgb_camera{i}{camera_name}", 
-            #     "camera_name":camera_name, 
-            #     **camera_params[camera_name]
-            #     } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
-            # ],
+            FFmpegDevice:[
+                {
+                "device_name":f"rgb_camera{i}{camera_name}", 
+                "camera_name":camera_name, 
+                **camera_params[camera_name]
+                } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
+            ],
             OrbbecDevice: [
             #    {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
             ],
             PPGDevice: [
-               # {"device_name":"ppg", "port":"COM6", "frame_rate":1000}
+            #    {"device_name":"ppg", "port":"COM9", "frame_rate":1000}  
             ],
             UwbDevice: [
                # {"device_name":"uwb", "port":"COM7", "frame_rate":200}
             ],
             MilliWaveDevice: [
-               {"device_name":"milliwave", "port":"COM8", "frame_rate":10, "baud_rate":2000000}
+            #    {"device_name":"milliwave", "port":"COM8", "frame_rate":110, "baud_rate":2000000}
             ],
             # OpencvDevice:[
             #     #  {"device_name":"IR_camera", "camera_name": "LRCP  USB2.0", "frame_size":(1080, 1920, 3), "frame_rate": 30, 'exposure':-6},

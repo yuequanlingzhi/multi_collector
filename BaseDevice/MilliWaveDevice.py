@@ -32,6 +32,7 @@ class MilliWaveDevice(BaseDevice):
         print(f"[{self.device_name}] 开始采集线程...")
         self.init_serial()
         self.collector = minireader.DataCollector()
+        self.collector.set_frame_size(65536)
         if self.collector.init():
             print("设备初始化成功")
         else:
@@ -45,7 +46,7 @@ class MilliWaveDevice(BaseDevice):
                 if frame is None or len(frame) < 10:
                     continue
                 if self.one_frame is None:
-                    self.one_frame = np.array(frame)
+                    self.one_frame = np.array(frame, dtype=np.uint8)
                     
                 self.current = frame[:280*210]
                 if BaseDevice.recording:

@@ -163,7 +163,7 @@ class BaseDevice:
             filename,
             device_name=self.device_name,
             frame_rate=self.frame_rate,
-            begin = self.timestamps[0],
+            timestamps=self.timestamps,
             frames=self.data[:l],
             meta_info=self.meta_info
         )
