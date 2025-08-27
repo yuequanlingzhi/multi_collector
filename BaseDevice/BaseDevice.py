@@ -172,7 +172,6 @@ class BaseDevice:
         folder = os.path.join(BaseDevice.save_floder,self.device_name)
         os.makedirs(folder, exist_ok=True)
         start = time.time()
-        print(f"[{self.device_name}]转换数据格式耗时：{time.time() - start:.4f}s")
         l = len(self.timestamps)
         filename = os.path.join(folder, f"{self.timestamps[0]}f{self.frame_rate}c{l}.npz")
 

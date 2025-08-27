@@ -62,7 +62,7 @@ class FFmpegDevice(BaseDevice):
     
     def reader(self,pipe,btys_queue):
         while self.running:
-            data = pipe.read(1024*5)
+            data = pipe.read(30000)
             if not data:
                 break
             btys_queue.put(data)

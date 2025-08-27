@@ -15,15 +15,15 @@ class PPGDevice(BaseDevice):
         self.ch2_show = []
         self.meta_info = meta_info if meta_info else {}
         self.port = port
-        self.show_time = 3
-        self.show_window = self.show_time * self.frame_rate
+        self.show_time = 5
+        self.show_window = self.show_time * self.frame_rate//8
         self.rppg_collector = None
 
     def _collect_loop(self):
         self.rppg_collector = RppgCollector(self.port)
         while self.running:
             try:
-                data = self.rppg_collector.read(len=6) # 返回[(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp)] 长度为4
+                data = self.rppg_collector.read(len=8) # 返回[(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp),(ch1,ch2,ch3,timestamp)] 长度为4
                 if data is None:
                     print('asdsad')
                     print(f"[{self.device_name}] 读取帧失败")
@@ -34,8 +34,8 @@ class PPGDevice(BaseDevice):
                 ch2 = [d[1] for d in data]
                 ch = [[d[0],d[1]] for d in data]
                 timestamp = [d[3] for d in data]
-                self.ch1_show.extend(ch1)
-                self.ch2_show.extend(ch2)
+                self.ch1_show.append(ch1[0])
+                self.ch2_show.append(ch2[0])
                 if len(self.ch1_show) > self.show_window:
                     self.ch1_show = self.ch1_show[-self.show_window:]
                     self.ch2_show = self.ch2_show[-self.show_window:]
@@ -94,8 +94,8 @@ class PPGDevice(BaseDevice):
         if length == 0:
             return img 
 
-        ch1_data = np.array(self.ch1_show[::5])
-        ch2_data = np.array(self.ch2_show[::5])
+        ch1_data = np.array(self.ch1_show)
+        ch2_data = np.array(self.ch2_show)
 
         min_val1, max_val1 = np.min(ch1_data), np.max(ch1_data)
         min_val2, max_val2 = np.min(ch2_data), np.max(ch2_data)
@@ -114,9 +114,9 @@ class PPGDevice(BaseDevice):
         ch1_y = height - ((ch1_data - min_val1) * scale1 + offset1).astype(np.int32)
         ch2_y = height - ((ch2_data - min_val2) * scale2 + offset2).astype(np.int32)
 
-        x = np.arange(length//5)
+        x = np.arange(length)
 
-        for i in range(length//5 - 1):
+        for i in range(length - 1):
             cv2.line(img, (x[i], ch1_y[i]), (x[i+1], ch1_y[i+1]), (0, 255, 0), 1) 
             cv2.line(img, (x[i], ch2_y[i]), (x[i+1], ch2_y[i+1]), (0, 0, 255), 1)  
 

@@ -79,8 +79,6 @@ class MainWindow(QWidget):
         print("所有设备初始化完成")
         self.device_list : List[BaseDevice] = BaseDevice.devices.values()
         self.devices : Dict[str, BaseDevice] = BaseDevice.devices
-        print(self.device_list)
-        print(self.devices)
         self.recording = False
 
         self.timer_label = QLabel("录制时间: 00:00")
@@ -97,7 +95,7 @@ class MainWindow(QWidget):
         # 定时器刷新摄像头画面
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frames)
-        self.timer.start(50)  # 约33fps刷新
+        self.timer.start(5000)  # 约10fps刷新
 
     def init_ui(self):
         layout = QVBoxLayout()
@@ -167,7 +165,7 @@ class MainWindow(QWidget):
 
         video_layout = None
         for i, device in enumerate(self.device_list):
-            if i % 4 == 0:
+            if i % 5 == 0:
                 if video_layout is not None:
                     layout.addLayout(video_layout)
                 video_layout = QHBoxLayout()
@@ -184,7 +182,7 @@ class MainWindow(QWidget):
             # 水平布局包裹勾选框，实现居中
             hbox = QHBoxLayout()
             checkbox = QCheckBox(f"{device_name}")
-            checkbox.setChecked(False)
+            checkbox.setChecked(True)
             checkbox.stateChanged.connect(lambda state, dn=device_name: self.on_checkbox_state_changed(dn, state))
             self.checkboxes[device_name] = checkbox
 
@@ -261,7 +259,7 @@ class MainWindow(QWidget):
         label.setPixmap(pixmap)
 
     def start_record(self):
-        for checkbox in self.chekcboxes.values():
+        for checkbox in self.checkboxes.values():
             checkbox.setEnabled(False)
         self.record_seconds = -1
         self.update_record_time()  # 立即刷新显示
@@ -312,7 +310,7 @@ class MainWindow(QWidget):
                 device.save_data()
         self.btn_start.setEnabled(True)
         self.btn_stop.setEnabled(False)
-        for checkbox in self.chekcboxes.values():
+        for checkbox in self.checkboxes.values():
             checkbox.setEnabled(True)
 
     def update_record_time(self):
@@ -345,13 +343,13 @@ class MainWindow(QWidget):
                 } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
             ],
             OrbbecDevice: [
-            #    {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
+               {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
             ],
             PPGDevice: [
-            #    {"device_name":"ppg", "port":"COM4", "frame_rate":1000}  
+               {"device_name":"ppg", "port":"COM4", "frame_rate":1000}  
             ],
             UwbDevice: [
-            #    {"device_name":"uwb", "port":"COM6", "frame_rate":200}
+               {"device_name":"uwb", "port":"COM6", "frame_rate":200}
             ],
             MilliWaveDevice: [
             #    {"device_name":"milliwave", "port":"COM5", "frame_rate":110, "baud_rate":2000000}

@@ -1,7 +1,16 @@
-import numpy as np
+import cv2
 
-data = np.load(r"data\测试\平静\ppg\1756196871.944325f1000c57225.npz", allow_pickle=True)
-frames = data['frames']
-timestamps = data['timestamps']
-meta_info = data['meta_info']
-print(timestamps[:10])
+cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+#设置曝光为-6
+cap.set(cv2.CAP_PROP_EXPOSURE, -6)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    cv2.imshow("Frame", frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
