@@ -45,7 +45,7 @@ class OrbbecDevice(BaseDevice):
                 self.current, frame_data = self.get_current_help(frame)
                 if self.one_frame is None:
                     self.one_frame = frame_data
-                if BaseDevice.recording:
+                if BaseDevice.recording and self.allow_record:
                     self.put_data_to_buffer((frame_data, timestamp))
 
     def get_current_help(self,frame: openni2.VideoFrame):

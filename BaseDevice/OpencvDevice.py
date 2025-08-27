@@ -50,12 +50,12 @@ class OpencvDevice(BaseDevice):
             if not ret or frame is None:
                 continue
             
-            if not BaseDevice.recording:
+            if not (BaseDevice.recording and self.allow_record):
                 self.n_frames.append(self.encode(frame))
                 if len(self.n_frames) > 10:
                     self.n_frames.pop(0)
             self.current = np.array(frame)
-            if BaseDevice.recording:
+            if BaseDevice.recording and self.allow_record:
                 cnt += 1
                 if time.time() - start > 1:
                     print(f"fps: {cnt}")

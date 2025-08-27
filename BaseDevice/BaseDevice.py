@@ -22,6 +22,7 @@ class BaseDevice:
         self.buffer_len = 90
         self.thread = None
         self.running = False  # 线程运行标志
+        self.allow_record = True
         BaseDevice.devices[device_name] = self
 
     def start(self):
@@ -62,10 +63,14 @@ class BaseDevice:
     def start_record(record_duration : float = 5):
         """开始保存数据"""
         for device in BaseDevice.devices.values():
+            if not device.allow_record:
+                continue
             device.ini_data_buffer()
             print(f"[{device.device_name}] 开始录制...")
         BaseDevice.recording = True
         for device in BaseDevice.devices.values():
+            if not device.allow_record:
+                continue
             threading.Thread(target=lambda: device.record(), daemon=True).start()
         # time.sleep(2)
         # BaseDevice.write_thread = threading.Thread(target=BaseDevice.save_data_block, args=(record_duration,), daemon=True)
@@ -76,7 +81,8 @@ class BaseDevice:
         """停止保存数据并写入文件"""
         BaseDevice.recording = False
         for device in BaseDevice.devices.values():
-            print(f"[{device.device_name}] 停止录制...")
+            if device.allow_record:
+                print(f"[{device.device_name}] 停止录制...")
 
     @staticmethod
     def get_latest_start_timestamp():

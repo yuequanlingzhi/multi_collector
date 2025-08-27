@@ -44,7 +44,7 @@ class UwbDevice(BaseDevice):
             self.data_show.append(np.abs(frame))
             if len(self.data_show) > self.show_window:
                 self.data_show.pop(0)
-            if BaseDevice.recording:
+            if BaseDevice.recording and self.allow_record:
                 self.put_data_to_buffer((frame, timestamp))
     
     def get_current_data(self):

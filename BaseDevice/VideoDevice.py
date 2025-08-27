@@ -73,7 +73,7 @@ class VideoDevice(BaseDevice):
                 self.n_frames.append(bytes(packet))
                 if len(self.n_frames) > 10:
                     self.n_frames.pop(0)
-            if BaseDevice.recording:
+            if BaseDevice.recording and self.allow_record:
                 self.put_data_to_buffer((bytes(packet), timestamp))
     
 

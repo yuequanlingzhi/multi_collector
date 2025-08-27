@@ -20,7 +20,7 @@ from BaseDevice.FFmpegDevice import FFmpegDevice
 
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout,
-    QHBoxLayout, QFileDialog, QMessageBox, QGridLayout, QGroupBox, QComboBox
+    QHBoxLayout, QFileDialog, QMessageBox, QGridLayout, QGroupBox, QComboBox, QCheckBox
 )
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap
@@ -78,7 +78,9 @@ class MainWindow(QWidget):
         BaseDevice.start_devices()
         print("所有设备初始化完成")
         self.device_list : List[BaseDevice] = BaseDevice.devices.values()
+        self.devices : Dict[str, BaseDevice] = BaseDevice.devices
         print(self.device_list)
+        print(self.devices)
         self.recording = False
 
         self.timer_label = QLabel("录制时间: 00:00")
@@ -88,6 +90,8 @@ class MainWindow(QWidget):
         self.record_seconds = 0
         self.record_timer = QTimer()
         self.record_timer.timeout.connect(self.update_record_time)
+
+        self.checkboxes : Dict[str, QCheckBox] = {}
         self.init_ui()
         print('ui初始化完成')
         # 定时器刷新摄像头画面
@@ -156,19 +160,42 @@ class MainWindow(QWidget):
         path_layout.addWidget(path_btn)
         layout.addLayout(path_layout)
 
-        self.labels : Dict[str, QLabel] = {}
+        
         # 显示区
+        self.labels : Dict[str, QLabel] = {}
+        self.checkboxes : Dict[str, QLabel]= {}
+
         video_layout = None
-        for i,device in enumerate(self.device_list):
-            if i%4==0:
+        for i, device in enumerate(self.device_list):
+            if i % 4 == 0:
                 if video_layout is not None:
                     layout.addLayout(video_layout)
                 video_layout = QHBoxLayout()
+
             device_name = device.device_name
-            self.labels[device_name] = QLabel(device_name)
-            self.labels[device_name].setFixedSize(560, 420)
-            self.labels[device_name].setStyleSheet("background-color: black;")
-            video_layout.addWidget(self.labels[device.device_name])
+
+            vbox = QVBoxLayout()
+
+            label = QLabel(device_name)
+            label.setFixedSize(560, 420)
+            label.setStyleSheet("background-color: black;")
+            self.labels[device_name] = label
+
+            # 水平布局包裹勾选框，实现居中
+            hbox = QHBoxLayout()
+            checkbox = QCheckBox(f"{device_name}")
+            checkbox.setChecked(False)
+            checkbox.stateChanged.connect(lambda state, dn=device_name: self.on_checkbox_state_changed(dn, state))
+            self.checkboxes[device_name] = checkbox
+
+            hbox.addWidget(checkbox)
+            hbox.setAlignment(Qt.AlignHCenter)
+
+            vbox.addWidget(label)
+            vbox.addLayout(hbox)
+            vbox.setAlignment(Qt.AlignHCenter)
+            video_layout.addLayout(vbox)
+
         layout.addLayout(video_layout)
 
         layout.addWidget(self.timer_label)
@@ -186,6 +213,15 @@ class MainWindow(QWidget):
 
         self.setLayout(layout)
 
+    def on_checkbox_state_changed(self, device_name, state):
+        if self.recording:
+            return
+        
+        allow = (state == Qt.Checked)
+        device = self.devices[device_name]
+        device.allow_record = allow
+        print(f"Device {device_name} allow record: {allow}")
+    
     def select_save_path(self):
         dir_path = QFileDialog.getExistingDirectory(self, "选择保存路径", self.save_dir)
         if dir_path:
@@ -225,7 +261,9 @@ class MainWindow(QWidget):
         label.setPixmap(pixmap)
 
     def start_record(self):
-        self.record_seconds = 0
+        for checkbox in self.chekcboxes.values():
+            checkbox.setEnabled(False)
+        self.record_seconds = -1
         self.update_record_time()  # 立即刷新显示
         self.record_timer.start(1000)  # 每秒更新一次
         # 通过meta_fileds获取元数据
@@ -249,13 +287,13 @@ class MainWindow(QWidget):
             user_name = "unknown"
         BaseDevice.register_user_meta_data(self.save_dir,meta_data)
         # 先保存元数据到txt
-        meta_path = os.path.join(self.save_dir, user_name ,f"metadata.txt")
-        with open(meta_path, 'w', encoding='utf-8') as f:
-            for k, widget in self.meta_fields.items():
-                if k == "状态" or k == "性别":
-                    continue
-                f.write(f"{k}: {widget.text()}\n")
-        print(f"元数据保存到 {meta_path}")
+        # meta_path = os.path.join(self.save_dir, user_name ,f"metadata.txt")
+        # with open(meta_path, 'w', encoding='utf-8') as f:
+        #     for k, widget in self.meta_fields.items():
+        #         if k == "状态" or k == "性别":
+        #             continue
+        #         f.write(f"{k}: {widget.text()}\n")
+        # print(f"元数据保存到 {meta_path}")
         record_duration = 5
         BaseDevice.start_record(record_duration=record_duration)
         self.recording = True
@@ -267,12 +305,15 @@ class MainWindow(QWidget):
         BaseDevice.stop_record()
         self.recording = False
         self.record_timer.stop()
-        self.record_seconds = 0
+        self.record_seconds = -1
         self.update_record_time() 
         for device in self.device_list:
-            device.save_data()
+            if device.allow_record:
+                device.save_data()
         self.btn_start.setEnabled(True)
         self.btn_stop.setEnabled(False)
+        for checkbox in self.chekcboxes.values():
+            checkbox.setEnabled(True)
 
     def update_record_time(self):
         self.record_seconds += 1
@@ -294,24 +335,23 @@ class MainWindow(QWidget):
             camera_devices_list = graph.get_input_devices()
         except Exception as e:
             camera_devices_list = []
-        print("检测到的摄像头设备：", camera_devices_list)
         devices_configs : Dict[Type[BaseDevice], List[Dict[str, Any]]]
         devices_configs = {
             FFmpegDevice:[
                 {
-                "device_name":f"rgb_camera{i}{camera_name}", 
+                "device_name":f"camera{i}_{camera_name}", 
                 "camera_name":camera_name, 
                 **camera_params[camera_name]
                 } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
             ],
             OrbbecDevice: [
-               {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
+            #    {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
             ],
             PPGDevice: [
-               {"device_name":"ppg", "port":"COM4", "frame_rate":1000}  
+            #    {"device_name":"ppg", "port":"COM4", "frame_rate":1000}  
             ],
             UwbDevice: [
-               {"device_name":"uwb", "port":"COM6", "frame_rate":200}
+            #    {"device_name":"uwb", "port":"COM6", "frame_rate":200}
             ],
             MilliWaveDevice: [
             #    {"device_name":"milliwave", "port":"COM5", "frame_rate":110, "baud_rate":2000000}

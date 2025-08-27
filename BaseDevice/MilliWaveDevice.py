@@ -1,3 +1,4 @@
+
 import time
 # import minireader
 import cv2
@@ -47,7 +48,7 @@ class MilliWaveDevice(BaseDevice):
                     self.one_frame = np.array(frame, dtype=np.uint8)
                     
                 self.current = frame[:280*210]
-                if BaseDevice.recording:
+                if BaseDevice.recording and self.allow_record:
                     self.put_data_to_buffer((frame, timestamp))
             except Exception as e:
                 pass

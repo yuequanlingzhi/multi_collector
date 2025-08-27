@@ -42,7 +42,7 @@ class PPGDevice(BaseDevice):
             except Exception:
                 print(f"[{self.device_name}] 读取帧失败")
             finally:
-                if BaseDevice.recording:
+                if BaseDevice.recording and self.allow_record:
                     self.put_data_to_buffer((ch,timestamp))
     
     def record(self):
