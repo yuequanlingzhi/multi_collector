@@ -10,11 +10,11 @@ from __future__ import print_function, division
 
 import numpy as np
 from time import sleep
-
+from queue import Queue
 import pymoduleconnector
 from pymoduleconnector import DataType
 from pymoduleconnector.ids import *
-
+import threading
 
 __version__ = 3
 
@@ -25,7 +25,7 @@ class xep():
 
         self.reset(device_name)
         self.mc = pymoduleconnector.ModuleConnector(device_name)
-
+        self.buffer = Queue(maxsize=3)
         # Assume an X4M300/X4M200 module and try to enter XEP mode
         self.app = self.mc.get_x4m300()
         # Stop running application and set module in manual mode.
@@ -97,36 +97,26 @@ class xep():
     def start_streaming(self):
         # Start streaming of data
         self.xep.x4driver_set_fps(self.FPS)
+        self.recording = True
+        threading.Thread(target=self.read_frame_loop, daemon=True).start()
 
     def stop_streaming(self):
         self.xep.x4driver_set_fps(0)
+        self.recording = False
+
+    def read_frame_loop(self):
+        while self.recording:
+            while not self.xep.peek_message_data_float():
+                pass
+            
+            while self.xep.peek_message_data_float() > 0:
+                d = self.xep.read_message_data_float()
+                break
+            frame = np.array(d.data)
+            n = len(frame)
+            frame = frame[:n//2] + 1j*frame[n//2:]
+            self.buffer.put(frame)
 
     def read_frame(self):
         """Gets frame data from module"""
-        
-        if not self.xep.peek_message_data_float():
-            return None
-
-        # discard all frames which we cannot handle (loosing data if fps too high)
-        while self.xep.peek_message_data_float() > 0:
-            d = self.xep.read_message_data_float()
-        
-        # print(self.xep.peek_message_data_float())
-
-        frame = np.array(d.data)
-
-         # Convert the resulting frame to a complex array if downconversion is enabled
-        if self.baseband:
-            n = len(frame)
-            frame = frame[:n//2] + 1j*frame[n//2:]
-
-            # frame = abs(frame)
-        #else:
-        #    def moving_average(a, n=3) :
-        #        ret = np.cumsum(a, dtype=float)
-        #        ret[n:] = ret[n:] - ret[:-n]
-        #        return ret[n - 1:] / n
-        #    # smooth radar pulse to make it usable for simple analysis
-        #    frame = moving_average(abs(frame))
-
-        return frame
+        return self.buffer.get()

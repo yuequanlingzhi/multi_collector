@@ -13,11 +13,12 @@ class UwbDevice(BaseDevice):
         self.config = {
             "FPS": frame_rate,
             "RANGE_START": 0.0,
-            "RANGE_END": 2.5,
+            "RANGE_END": 2,
             "STEP": 360,
             "OFFSET": 0
         }
         self.meta_info = meta_info
+        self.show_fps = False
         self.port = port
         self.data_show = []
         self.show_time = 5
@@ -27,25 +28,32 @@ class UwbDevice(BaseDevice):
         self.uwb_radar = xep(self.port)
         self.uwb_radar.configure(dac_min=950, 
                                  dac_max=1050, 
-                                 frame_offset=0.25, 
+                                 frame_offset=0, 
                                  frame_start=self.config["RANGE_START"], 
                                  frame_end=self.config["RANGE_END"], 
                                  baseband=True, 
                                  fps=self.config["FPS"]
                                  ) 
         self.uwb_radar.start_streaming()
+        start = time.time()
+        cnt = 0
         while self.running:
             frame = self.uwb_radar.read_frame()
             timestamp = time.time()
             if frame is None:
                 continue
             if self.one_frame is None:
-                self.one_frame = np.array(frame)
+                self.one_frame = frame
             self.data_show.append(np.abs(frame))
             if len(self.data_show) > self.show_window:
                 self.data_show.pop(0)
             if BaseDevice.recording and self.allow_record:
                 self.put_data_to_buffer((frame, timestamp))
+            cnt += 1
+            if self.show_fps and time.time() - start > 1:
+                print(f"fps: {cnt}")
+                cnt = 0
+                start = time.time()
     
     def get_current_data(self):
         return self.get_current_data_help()

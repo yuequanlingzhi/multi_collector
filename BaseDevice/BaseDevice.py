@@ -19,7 +19,7 @@ class BaseDevice:
         self.one_frame = None
         self.buffer_size = frame_rate
         self.buffer = Queue(maxsize=self.buffer_size)
-        self.buffer_len = 90
+        self.buffer_len = 400
         self.thread = None
         self.running = False  # 线程运行标志
         self.allow_record = True

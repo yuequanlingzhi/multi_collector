@@ -1,5 +1,6 @@
 
 import time
+import sys
 # import minireader
 import cv2
 import threading
@@ -31,7 +32,7 @@ class MilliWaveDevice(BaseDevice):
         print(f"[{self.device_name}] 开始采集线程...")
         self.init_serial()
         self.collector = minireader.DataCollector()
-        self.collector.set_frame_size(65536)
+        self.collector.set_frame_size(262144)
         if self.collector.init():
             print("设备初始化成功")
         else:
@@ -46,7 +47,6 @@ class MilliWaveDevice(BaseDevice):
                     continue
                 if self.one_frame is None:
                     self.one_frame = np.array(frame, dtype=np.uint8)
-                    
                 self.current = frame[:280*210]
                 if BaseDevice.recording and self.allow_record:
                     self.put_data_to_buffer((frame, timestamp))

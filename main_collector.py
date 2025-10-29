@@ -47,8 +47,9 @@ camera_params={
         "quality": QUALITY,
     },
     "HD Pro Webcam C920":{
-        "ID1": r"@device_pnp_\\?\usb#vid_046d&pid_082d&mi_00#6&8d48e5e&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global",
-        "ID2": r"@device_pnp_\\?\usb#vid_046d&pid_082d&mi_00#6&103b5be6&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global",
+        
+        "ID1": r"@device_pnp_\\?\usb#vid_046d&pid_082d&mi_00#6&103b5be6&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global",
+        "ID2": r"@device_pnp_\\?\usb#vid_046d&pid_082d&mi_00#6&8d48e5e&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global",
         "frame_size":(1080, 1920, 3),
         "frame_rate": 30,
         "encode_type":"mjpeg",
@@ -95,7 +96,7 @@ class MainWindow(QWidget):
         # 定时器刷新摄像头画面
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frames)
-        self.timer.start(5000)  # 约10fps刷新
+        self.timer.start(33)  # 约10fps刷新
 
     def init_ui(self):
         layout = QVBoxLayout()
@@ -175,7 +176,7 @@ class MainWindow(QWidget):
             vbox = QVBoxLayout()
 
             label = QLabel(device_name)
-            label.setFixedSize(560, 420)
+            label.setFixedSize(480, 360)
             label.setStyleSheet("background-color: black;")
             self.labels[device_name] = label
 
@@ -337,7 +338,7 @@ class MainWindow(QWidget):
         devices_configs = {
             FFmpegDevice:[
                 {
-                "device_name":f"camera{i}_{camera_name}", 
+                "device_name":f"{camera_name}", 
                 "camera_name":camera_name, 
                 **camera_params[camera_name]
                 } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
@@ -346,13 +347,13 @@ class MainWindow(QWidget):
                {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
             ],
             PPGDevice: [
-               {"device_name":"ppg", "port":"COM4", "frame_rate":1000}  
+               {"device_name":"ppg", "port":"COM13", "frame_rate":1000}  
             ],
             UwbDevice: [
-               {"device_name":"uwb", "port":"COM6", "frame_rate":200}
+               {"device_name":"uwb", "port":"COM12", "frame_rate":100}
             ],
             MilliWaveDevice: [
-            #    {"device_name":"milliwave", "port":"COM5", "frame_rate":110, "baud_rate":2000000}
+               {"device_name":"milliwave", "port":"COM5", "frame_rate":110, "baud_rate":2000000}
             ],
             # OpencvDevice:[
             #     #  {"device_name":"IR_camera", "camera_name": "LRCP  USB2.0", "frame_size":(1080, 1920, 3), "frame_rate": 30, 'exposure':-6},

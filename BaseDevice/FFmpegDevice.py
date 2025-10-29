@@ -16,7 +16,10 @@ class FFmpegDevice(BaseDevice):
         frame_rate = kwargs.get('frame_rate')
         encode_type = kwargs.get("encode_type", "mjpeg")
         quality = kwargs.get("quality", 10)
-        super().__init__(device_name=device_name,frame_rate=frame_rate)
+        if camera_name == "HD Pro Webcam C920":
+            super().__init__(device_name=device_name+f"-{FFmpegDevice.logit_c920_id}",frame_rate=frame_rate)
+        else:
+            super().__init__(device_name=device_name,frame_rate=frame_rate)
         self.camera_name = camera_name
         if self.camera_name == "HD Pro Webcam C920":
             self.camera_name_ = kwargs.get(f"ID{FFmpegDevice.logit_c920_id}")
@@ -44,6 +47,7 @@ class FFmpegDevice(BaseDevice):
             '-q:v', f'{quality}',
             '-'
         ]
+        print(self.option_list)
         self.frame_buffer = queue.Queue(maxsize=1)
 
     def decode(self, frame_bty):
