@@ -60,7 +60,7 @@ class BaseDevice:
             device.start()
 
     @staticmethod
-    def start_record(record_duration : float = 5):
+    def start_record():
         """开始保存数据"""
         for device in BaseDevice.devices.values():
             if not device.allow_record:
@@ -72,9 +72,6 @@ class BaseDevice:
             if not device.allow_record:
                 continue
             threading.Thread(target=lambda: device.record(), daemon=True).start()
-        # time.sleep(2)
-        # BaseDevice.write_thread = threading.Thread(target=BaseDevice.save_data_block, args=(record_duration,), daemon=True)
-        # BaseDevice.write_thread.start()
 
     @staticmethod
     def stop_record():

@@ -1,21 +1,14 @@
 
 import os
 import sys
-import asyncio
-import time
 import cv2
-import scipy.io as sio
 from typing import List, Dict, Tuple, Any, Type
-from openni import openni2
 
-# from BaseDevice import BaseDevice, VideoDevice, OrbbecDevice, PPGDevice, UwbDevice, MilliWaveDevice, OpencvDevice
 from BaseDevice.BaseDevice import BaseDevice
-from BaseDevice.VideoDevice import VideoDevice
 from BaseDevice.OrbbecDevice import OrbbecDevice
 from BaseDevice.PPGDevice import PPGDevice
 from BaseDevice.UwbDevice import UwbDevice
 from BaseDevice.MilliWaveDevice import MilliWaveDevice
-from BaseDevice.OpencvDevice import OpencvDevice
 from BaseDevice.FFmpegDevice import FFmpegDevice
 
 from PyQt5.QtWidgets import (
@@ -89,6 +82,11 @@ class MainWindow(QWidget):
         self.record_seconds = 0
         self.record_timer = QTimer()
         self.record_timer.timeout.connect(self.update_record_time)
+        
+        # 自动停止定时器
+        self.auto_stop_timer = QTimer()
+        self.auto_stop_timer.setSingleShot(True)  # 只触发一次
+        self.auto_stop_timer.timeout.connect(self.stop_record)
 
         self.checkboxes : Dict[str, QCheckBox] = {}
         self.init_ui()
@@ -198,6 +196,17 @@ class MainWindow(QWidget):
         layout.addLayout(video_layout)
 
         layout.addWidget(self.timer_label)
+        
+        # 快捷录制按钮
+        quick_record_layout = QHBoxLayout()
+        self.btn_record_1min = QPushButton("录制1分钟")
+        self.btn_record_2min = QPushButton("录制2分钟")
+        self.btn_record_1min.clicked.connect(self.start_record_1min)
+        self.btn_record_2min.clicked.connect(self.start_record_2min)
+        quick_record_layout.addWidget(self.btn_record_1min)
+        quick_record_layout.addWidget(self.btn_record_2min)
+        layout.addLayout(quick_record_layout)
+        
         btn_layout = QHBoxLayout()
         self.btn_start = QPushButton("开始录制")
         self.btn_stop = QPushButton("停止录制")
@@ -259,12 +268,12 @@ class MainWindow(QWidget):
         pixmap = QPixmap.fromImage(qt_image).scaled(label.width(), label.height(), Qt.KeepAspectRatio)
         label.setPixmap(pixmap)
 
-    def start_record(self):
+    def _record(self):
         for checkbox in self.checkboxes.values():
             checkbox.setEnabled(False)
         self.record_seconds = -1
-        self.update_record_time()  # 立即刷新显示
-        self.record_timer.start(1000)  # 每秒更新一次
+        self.update_record_time()
+        self.record_timer.start(1000)
         # 通过meta_fileds获取元数据
         user_name = self.meta_fields["姓名"].text()
         user_age = self.meta_fields["年龄"].text()
@@ -282,25 +291,30 @@ class MainWindow(QWidget):
             "心率": user_heart_rate,
             "状态": user_state
         }
-        if user_name is None:
+        if user_name is None or user_name == "":
             user_name = "unknown"
         BaseDevice.register_user_meta_data(self.save_dir,meta_data)
-        # 先保存元数据到txt
-        # meta_path = os.path.join(self.save_dir, user_name ,f"metadata.txt")
-        # with open(meta_path, 'w', encoding='utf-8') as f:
-        #     for k, widget in self.meta_fields.items():
-        #         if k == "状态" or k == "性别":
-        #             continue
-        #         f.write(f"{k}: {widget.text()}\n")
-        # print(f"元数据保存到 {meta_path}")
-        record_duration = 5
-        BaseDevice.start_record(record_duration=record_duration)
+        BaseDevice.start_record()
         self.recording = True
         self.btn_start.setEnabled(False)
         self.btn_stop.setEnabled(True)
+        self.btn_record_1min.setEnabled(False)
+        self.btn_record_2min.setEnabled(False)
+    
+    def start_record_1min(self):
+        self._record()
+        self.auto_stop_timer.start(61000)
+    
+    def start_record_2min(self):
+        self._record()
+        self.auto_stop_timer.start(121000) 
+    
+    def start_record(self):
+        self._record()
 
     def stop_record(self):
-        # 定义每个设备停止录制并保存的线程函数
+        if self.auto_stop_timer.isActive():
+            self.auto_stop_timer.stop()
         BaseDevice.stop_record()
         self.recording = False
         self.record_timer.stop()
@@ -311,6 +325,9 @@ class MainWindow(QWidget):
                 device.save_data()
         self.btn_start.setEnabled(True)
         self.btn_stop.setEnabled(False)
+        # 重新启用快捷录制按钮
+        self.btn_record_1min.setEnabled(True)
+        self.btn_record_2min.setEnabled(True)
         for checkbox in self.checkboxes.values():
             checkbox.setEnabled(True)
 
@@ -344,25 +361,17 @@ class MainWindow(QWidget):
                 } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
             ],
             OrbbecDevice: [
-               {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
+            #    {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
             ],
             PPGDevice: [
-               {"device_name":"ppg", "port":"COM13", "frame_rate":1000}  
+            #    {"device_name":"ppg", "port":"COM13", "frame_rate":1000}  
             ],
             UwbDevice: [
-               {"device_name":"uwb", "port":"COM12", "frame_rate":100}
+            #    {"device_name":"uwb", "port":"COM12", "frame_rate":100}
             ],
             MilliWaveDevice: [
-               {"device_name":"milliwave", "port":"COM5", "frame_rate":110, "baud_rate":2000000}
+            #    {"device_name":"milliwave", "port":"COM5", "frame_rate":110, "baud_rate":2000000}
             ],
-            # OpencvDevice:[
-            #     #  {"device_name":"IR_camera", "camera_name": "LRCP  USB2.0", "frame_size":(1080, 1920, 3), "frame_rate": 30, 'exposure':-6},
-            #     # {"device_name":"Logitech_cam", "camera_name": "HD Pro Webcam C920", "frame_size":(1080, 1900, 3), "frame_rate": 30},
-            # ]
-            # FFmpegDevice:[
-            #     {"device_name":"Logitech_cam", "camera_name": "HD Pro Webcam C920", "frame_size":(1080, 1920, 3), "frame_rate": 30, "encode_type":"mjpeg"},
-            # ]
-
         }
 
         for device_class, device_configs in devices_configs.items():
