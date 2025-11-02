@@ -174,7 +174,7 @@ class MainWindow(QWidget):
             vbox = QVBoxLayout()
 
             label = QLabel(device_name)
-            label.setFixedSize(1280, 720)
+            label.setFixedSize(480, 360)
             label.setStyleSheet("background-color: black;")
             self.labels[device_name] = label
 
@@ -365,16 +365,16 @@ class MainWindow(QWidget):
                 } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
             ],
             OrbbecDevice: [
-            #    {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
+               {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
             ],
             PPGDevice: [
-            #    {"device_name":"ppg", "port":"COM13", "frame_rate":1000}  
+               {"device_name":"ppg", "port":"COM15", "frame_rate":1000}  
             ],
             UwbDevice: [
-            #    {"device_name":"uwb", "port":"COM12", "frame_rate":100}
+               {"device_name":"uwb", "port":"COM4", "frame_rate":100}
             ],
             MilliWaveDevice: [
-            #    {"device_name":"milliwave", "port":"COM5", "frame_rate":110, "baud_rate":2000000}
+               {"device_name":"milliwave", "port":"COM5", "frame_rate":110, "baud_rate":2000000}
             ],
         }
 

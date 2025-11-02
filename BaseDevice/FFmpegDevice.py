@@ -66,7 +66,7 @@ class FFmpegDevice(BaseDevice):
     
     def reader(self,pipe,btys_queue):
         while self.running:
-            data = pipe.read(12000)
+            data = pipe.read(15000)
             if not data:
                 break
             btys_queue.put(data)
@@ -161,9 +161,6 @@ class FFmpegDevice(BaseDevice):
         l = len(self.timestamps)
         filename = os.path.join(folder, f"{self.timestamps[0]}f{self.frame_rate}c{l}.npz")
 
-        if self.camera_name == "video=HD Pro Webcam C920":
-            for i in range(10):
-                print(len(self.data[i]),self.frame_lens[i])
         # 保存多个变量
         np.savez(
             filename,
@@ -171,7 +168,6 @@ class FFmpegDevice(BaseDevice):
             frame_rate=self.frame_rate,
             timestamps=np.array(self.timestamps,dtype=np.float64),
             frames=self.data,
-            frame_lens = self.frame_lens,
             meta_info=BaseDevice.meta_data
         )
         print(f"[{self.device_name}] 数据保存到 {filename}, 帧长度为{l}，整体耗时：{time.time() - start:.4f}s")

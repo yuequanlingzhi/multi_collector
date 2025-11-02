@@ -32,7 +32,7 @@ class MilliWaveDevice(BaseDevice):
         print(f"[{self.device_name}] 开始采集线程...")
         self.init_serial()
         self.collector = minireader.DataCollector()
-        self.collector.set_frame_size(262144)
+        self.collector.set_frame_size(65536)
         if self.collector.init():
             print("设备初始化成功")
         else:
