@@ -40,7 +40,15 @@ conda activate multi_collector
    python setup.py install
    cd ../
    ```
-4. 配置ffmpeg
+
+4. 安装驱动
+
+   ```
+   ".\driver\【串口驱动】 USB-TTL\CH341SER.EXE"
+   ".\driver\CP210x_Windows_Drivers\CP210xVCPInstaller_x64.exe"
+   ```
+
+5. 配置ffmpeg
    将下列路径添加至环境变量
 
    ```

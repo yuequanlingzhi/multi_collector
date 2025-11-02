@@ -19,7 +19,7 @@ from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap
 from pygrabber.dshow_graph import FilterGraph
 
-QUALITY = 10
+QUALITY = 5
 camera_params={
     "Logitech StreamCam": {
         "frame_size":(1080, 1920, 3),
@@ -60,7 +60,7 @@ class MainWindow(QWidget):
     def __init__(self): 
         super().__init__()
         self.setWindowTitle("多设备多模态数据采集")
-        self.resize(1200, 700)
+        self.resize(1920, 1080)
 
         base_dir = os.path.abspath(os.path.dirname(sys.argv[0]))  # 获取运行目录
         data_dir = os.path.join(base_dir, "data")
@@ -174,7 +174,7 @@ class MainWindow(QWidget):
             vbox = QVBoxLayout()
 
             label = QLabel(device_name)
-            label.setFixedSize(480, 360)
+            label.setFixedSize(1280, 720)
             label.setStyleSheet("background-color: black;")
             self.labels[device_name] = label
 
@@ -281,11 +281,15 @@ class MainWindow(QWidget):
         user_blood_pressure_high = self.meta_fields["血压（高压）"].text()
         user_blood_pressure_low = self.meta_fields["血压（低压）"].text()
         user_heart_rate = self.meta_fields["心率"].text()
+        user_height = self.meta_fields["身高(cm)"].text()
+        user_weight = self.meta_fields["体重(kg)"].text()
         user_state = self.meta_fields["状态"].currentText()
         meta_data = {
             "姓名": user_name,
             "年龄": user_age,
             "性别": user_gender,
+            "身高(cm)": user_height,
+            "体重(kg)": user_weight,
             "血压（高压）": user_blood_pressure_high,
             "血压（低压）": user_blood_pressure_low,
             "心率": user_heart_rate,

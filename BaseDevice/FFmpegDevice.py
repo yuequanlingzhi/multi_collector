@@ -48,7 +48,7 @@ class FFmpegDevice(BaseDevice):
             '-'
         ]
         print(self.option_list)
-        self.frame_buffer = queue.Queue(maxsize=1)
+        self.frame_buffer = queue.Queue(maxsize=2)
 
     def decode(self, frame_bty):
         try:
@@ -66,7 +66,7 @@ class FFmpegDevice(BaseDevice):
     
     def reader(self,pipe,btys_queue):
         while self.running:
-            data = pipe.read(30000)
+            data = pipe.read(12000)
             if not data:
                 break
             btys_queue.put(data)
@@ -111,7 +111,6 @@ class FFmpegDevice(BaseDevice):
         threading.Thread(target=self.start_ffmpeg, args=(self.option_list,)).start()
         start = time.time()
         cnt = 0
-        
         while self.running:
             try:
                 frame_bty, timestamp = self.frame_buffer.get(timeout=1)
@@ -143,10 +142,7 @@ class FFmpegDevice(BaseDevice):
         while BaseDevice.recording:
             try:
                 frame_bytes, timestamp = self.buffer.get(timeout=1)
-                frame_len = len(frame_bytes)
-                frame_pad = frame_bytes.ljust(self.frame_max_size, b'\x00')
-                self.data.append(frame_pad)
-                self.frame_lens.append(frame_len)
+                self.data.append(frame_bytes)
                 self.timestamps.append(timestamp)
                 self.frame_count += 1
             except:
@@ -185,11 +181,8 @@ class FFmpegDevice(BaseDevice):
     
     def ini_data_buffer(self, index=None):
         self.frame_count = 0
-        self.frame_size= self.get_size()
-        self.frame_max_size = int(self.frame_size*2)
         self.data = []
         self.timestamps = []
-        self.frame_lens = []
 
     def get_current_data(self):
         if self.current is None:

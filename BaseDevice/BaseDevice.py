@@ -177,7 +177,7 @@ class BaseDevice:
             filename,
             device_name=self.device_name,
             frame_rate=self.frame_rate,
-            timestamps=np.array(self.timestamps,dtype=np.float64),
+            timestamps=np.array(self.timestamps, dtype=np.float64),
             frames=self.data[:l],
             meta_info=BaseDevice.meta_data
         )
