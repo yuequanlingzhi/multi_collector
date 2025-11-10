@@ -1,0 +1,13 @@
+0.015033 : Error creating file
+
+0.018034 : ReadFile returned error: 句柄无效。
+
+0.018034 : do_single_read failed
+
+0.018034 : io_read() returned negative: 
+
+0.018034 : Reader is bailing out
+
+0.075485 : call to WriteFile failed -- closing file -- 句柄无效。
+
+0.075485 : Failed to write all bytes to module, expected bytes written: 4, actual bytes written: 0

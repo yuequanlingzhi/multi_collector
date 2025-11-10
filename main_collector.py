@@ -88,6 +88,11 @@ class MainWindow(QWidget):
         self.auto_stop_timer.setSingleShot(True)  # 只触发一次
         self.auto_stop_timer.timeout.connect(self.stop_record)
 
+        # 检测保存状态的定时器
+        self.save_check_timer = QTimer()
+        self.save_check_timer.timeout.connect(self.check_saving_status)
+        self.save_check_timer.start(500)  # 每500ms检查一次
+
         self.checkboxes : Dict[str, QCheckBox] = {}
         self.init_ui()
         print('ui初始化完成')
@@ -200,11 +205,16 @@ class MainWindow(QWidget):
         # 快捷录制按钮
         quick_record_layout = QHBoxLayout()
         self.btn_record_1min = QPushButton("录制1分钟")
-        self.btn_record_2min = QPushButton("录制2分钟")
+        self.btn_record_ppg = QPushButton("单独录制ppg")
         self.btn_record_1min.clicked.connect(self.start_record_1min)
-        self.btn_record_2min.clicked.connect(self.start_record_2min)
+        self.btn_record_ppg.clicked.connect(self.start_record_ppg)
         quick_record_layout.addWidget(self.btn_record_1min)
-        quick_record_layout.addWidget(self.btn_record_2min)
+        quick_record_layout.addWidget(self.btn_record_ppg)
+        
+        # 检查是否存在ppg设备，如果不存在则禁用按钮
+        if "ppg" not in self.devices:
+            self.btn_record_ppg.setEnabled(False)
+        
         layout.addLayout(quick_record_layout)
         
         btn_layout = QHBoxLayout()
@@ -268,7 +278,7 @@ class MainWindow(QWidget):
         pixmap = QPixmap.fromImage(qt_image).scaled(label.width(), label.height(), Qt.KeepAspectRatio)
         label.setPixmap(pixmap)
 
-    def _record(self):
+    def _record(self, force_meta_data=None, only_ppg=False):
         for checkbox in self.checkboxes.values():
             checkbox.setEnabled(False)
         self.record_seconds = -1
@@ -295,23 +305,41 @@ class MainWindow(QWidget):
             "心率": user_heart_rate,
             "状态": user_state
         }
+        # 如果传入了force_meta_data，则更新meta_data
+        if force_meta_data is not None:
+            meta_data.update(force_meta_data)
+        
         if user_name is None or user_name == "":
             user_name = "unknown"
         BaseDevice.register_user_meta_data(self.save_dir,meta_data)
+        
+        # 如果only_ppg为True，只启动ppg设备录制
+        if only_ppg:
+            if "ppg" in self.devices:
+                # 禁用所有设备的录制，然后只启用ppg
+                for device in self.device_list:
+                    device.allow_record = False
+                self.devices["ppg"].allow_record = True
+        else:
+            # 保持原有的allow_record状态
+            pass
+        
         BaseDevice.start_record()
         self.recording = True
         self.btn_start.setEnabled(False)
         self.btn_stop.setEnabled(True)
         self.btn_record_1min.setEnabled(False)
-        self.btn_record_2min.setEnabled(False)
+        if "ppg" in self.devices:
+            self.btn_record_ppg.setEnabled(False)
     
     def start_record_1min(self):
         self._record()
         self.auto_stop_timer.start(61000)
     
-    def start_record_2min(self):
-        self._record()
-        self.auto_stop_timer.start(121000) 
+    def start_record_ppg(self):
+        # 单独录制ppg，状态固定为"运动间"
+        force_meta = {"状态": "运动间"}
+        self._record(force_meta_data=force_meta, only_ppg=True)
     
     def start_record(self):
         self._record()
@@ -324,22 +352,71 @@ class MainWindow(QWidget):
         self.record_timer.stop()
         self.record_seconds = -1
         self.update_record_time() 
+        
+        # 记录哪些设备需要保存
+        devices_to_save = []
         for device in self.device_list:
             if device.allow_record:
+                device.saving = True
                 device.save_data()
-        self.btn_start.setEnabled(True)
-        self.btn_stop.setEnabled(False)
-        # 重新启用快捷录制按钮
-        self.btn_record_1min.setEnabled(True)
-        self.btn_record_2min.setEnabled(True)
-        for checkbox in self.checkboxes.values():
-            checkbox.setEnabled(True)
+                devices_to_save.append(device)
+            else:
+                # 对于没有allow_record的设备，确保saving为False
+                device.saving = False
+        
+        # 如果没有设备需要保存，直接重新激活按钮
+        if len(devices_to_save) == 0:
+            self.btn_start.setEnabled(True)
+            self.btn_stop.setEnabled(False)
+            self.btn_record_1min.setEnabled(True)
+            if "ppg" in self.devices:
+                self.btn_record_ppg.setEnabled(True)
+            for checkbox in self.checkboxes.values():
+                checkbox.setEnabled(True)
+        else:
+            # 停止录制后，先禁用所有按钮，等待保存完成
+            self.btn_start.setEnabled(False)
+            self.btn_stop.setEnabled(False)
+            self.btn_record_1min.setEnabled(False)
+            if "ppg" in self.devices:
+                self.btn_record_ppg.setEnabled(False)
+            for checkbox in self.checkboxes.values():
+                checkbox.setEnabled(False)
+        
+        # 恢复所有设备的allow_record状态（如果之前是单独录制ppg）
+        for device in self.device_list:
+            if device.device_name in self.checkboxes:
+                device.allow_record = self.checkboxes[device.device_name].isChecked()
 
     def update_record_time(self):
         self.record_seconds += 1
         mins = self.record_seconds // 60
         secs = self.record_seconds % 60
         self.timer_label.setText(f"录制时间: {mins:02d}:{secs:02d}")
+    
+    def check_saving_status(self):
+        """定时检查所有设备的保存状态，如果所有设备都保存完成，则重新激活按钮"""
+        # 如果正在录制，不检查保存状态
+        if self.recording:
+            return
+        
+        # 检查是否有设备正在保存
+        any_saving = False
+        for device in self.device_list:
+            if device.saving:
+                any_saving = True
+                break
+        
+        # 如果没有任何设备在保存，且按钮当前是禁用状态，则重新激活按钮
+        if not any_saving:
+            if not self.btn_start.isEnabled():
+                print("所有设备保存完成，重新激活按钮")
+                self.btn_start.setEnabled(True)
+                self.btn_record_1min.setEnabled(True)
+                if "ppg" in self.devices:
+                    self.btn_record_ppg.setEnabled(True)
+                for checkbox in self.checkboxes.values():
+                    checkbox.setEnabled(True)
         
     def closeEvent(self, event):
         # 关闭程序时释放摄像头资源
@@ -368,7 +445,7 @@ class MainWindow(QWidget):
                {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
             ],
             PPGDevice: [
-               {"device_name":"ppg", "port":"COM15", "frame_rate":1000}  
+               {"device_name":"ppg", "port":"COM15", "frame_rate":1000}
             ],
             UwbDevice: [
                {"device_name":"uwb", "port":"COM4", "frame_rate":100}

@@ -119,6 +119,7 @@ class OpencvDevice(BaseDevice):
             time.sleep(0.1)
         if self.data is None:
             print(f"[{self.device_name}] 无数据保存")
+            self.saving = False  # 即使没有数据，也要设置saving为False
             return
         folder = os.path.join(BaseDevice.save_floder,self.device_name)
         os.makedirs(folder, exist_ok=True)
@@ -141,3 +142,4 @@ class OpencvDevice(BaseDevice):
         del self.data
         del self.timestamps
         self.ini_data_buffer()
+        self.saving = False
