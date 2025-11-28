@@ -1,36 +1,17 @@
 from BaseDevice.DataSetLoader import DatasetLoader
 """
-"start": "平静",
-"begin": "平静",
-"static": "平静",
-"before": "平静",
-"sport": "运动",
-"middle": "运动",
-"after": "运动后",
-"rest": "休息",
-"0": "平静",
-"1": "运动",
-"2": "运动后",
-"3": "休息",
+"0":'静坐',
 
 ==========================================
 
-"side1": 'HD Pro Webcam C920-1', ---C920摄像头1
-"side2": 'HD Pro Webcam C920-2', ---C920摄像头2
-"frame120": "HD USB Camera", ---120帧摄像头
-"120": "HD USB Camera", ---120帧摄像头
-"ir": "LRCP  USB2.0",   ---红外摄像头
-"front": "USB Camera",  ---深度摄像头RGB通道
-"ppg": "ppg",  ---PPG
-"uwb": "uwb",  ---超宽带
 "mmwave": "milliwave",  ---毫米波
 "mm": "milliwave",  ---毫米波
-"depth": "orbbec_depth_camera",  ---深度摄像头
+"rgb": "Logitech StreamCam",
 """
 if __name__ == "__main__":
-    loader = DatasetLoader(r"F:\多模态data")
+    loader = DatasetLoader(r"D:\work\multi_collector\release\mmwave-skeleton\data")
     print(loader.shape)                   #返回(最大被试数, 最大状态数, 最大设备数, 最大文件数)
-    data = loader[0, "after", "mm", 0]    #[被试id,状态,设备,文件]
+    data = loader[0, "0", "mm", 0]    #[被试id,状态,设备,文件]
     #data = loader[0, 0, 0, 0]            #支持索引，返回一个Dict[str, Any]
     #data = loader[0, "after", "mm", :]   #支持切片，返回一个list[Dict[str, Any]]
     print(data["device_name"])            #设备名称
@@ -49,7 +30,9 @@ if __name__ == "__main__":
     print("="*100)
     print(loader.get_mapping())
     print(loader.get_mapping(0))
-    print(loader.get_mapping(0, "start"))
-    print(loader.get_mapping(0, 1, "uwb"))
-    print(loader.get_mapping(0, "0", "uwb"))
-    print(loader.get_mapping(0, "start", "side1"))
+    print(loader.get_mapping(0, "0"))
+    print(loader.get_mapping(0, 0, "mm"))
+    print(loader.get_mapping(0, "0", "mm"))
+    print(loader.get_mapping(0, "0", "mm"))
+
+    print(data["frames"][0][:,:,:3])

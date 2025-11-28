@@ -2,12 +2,9 @@
 import os
 import sys
 import cv2
+import time
 from typing import List, Dict, Tuple, Any, Type
-
 from BaseDevice.BaseDevice import BaseDevice
-from BaseDevice.OrbbecDevice import OrbbecDevice
-from BaseDevice.PPGDevice import PPGDevice
-from BaseDevice.UwbDevice import UwbDevice
 from BaseDevice.MilliWaveDevice import MilliWaveDevice
 from BaseDevice.FFmpegDevice import FFmpegDevice
 
@@ -113,14 +110,11 @@ class MainWindow(QWidget):
             "性别": QComboBox(),  #(男/女)两选一
             "身高(cm)": QLineEdit(),
             "体重(kg)": QLineEdit(),
-            "心率": QLineEdit(),
-            "血压（高压）": QLineEdit(),
-            "血压（低压）": QLineEdit(),
-            "状态": QComboBox(),    #(平静/运动/运动后/休息)四选一
+            "动作": QComboBox(), 
             "备注": QLineEdit()
         }
 
-        self.meta_fields["状态"].addItems(["平静", "运动", "运动后", "休息"])
+        self.meta_fields["动作"].addItems(["静坐", "左二郎腿", "右二郎腿"])
         self.meta_fields["性别"].addItems(["男", "女"])
         row = 0
         col = 0
@@ -179,7 +173,7 @@ class MainWindow(QWidget):
             vbox = QVBoxLayout()
 
             label = QLabel(device_name)
-            label.setFixedSize(480, 360)
+            label.setFixedSize(960, 720)
             label.setStyleSheet("background-color: black;")
             self.labels[device_name] = label
 
@@ -253,10 +247,9 @@ class MainWindow(QWidget):
         try:
             for label_name, frame in zip(self.labels.keys(), frames):
                 if frame is not None:
-                    if label_name in ["orbbec_depth_camera","uwb","milliwave"]:
+                    if label_name in ["orbbec_depth_camera","uwb"]:
                         self.show_frame_gray(self.labels[label_name], frame)
                     else:
-
                         self.show_frame(self.labels[label_name], frame)
         except Exception as e:
             pass
@@ -288,22 +281,18 @@ class MainWindow(QWidget):
         user_name = self.meta_fields["姓名"].text()
         user_age = self.meta_fields["年龄"].text()
         user_gender = self.meta_fields["性别"].currentText()
-        user_blood_pressure_high = self.meta_fields["血压（高压）"].text()
-        user_blood_pressure_low = self.meta_fields["血压（低压）"].text()
-        user_heart_rate = self.meta_fields["心率"].text()
         user_height = self.meta_fields["身高(cm)"].text()
         user_weight = self.meta_fields["体重(kg)"].text()
-        user_state = self.meta_fields["状态"].currentText()
+        user_state = self.meta_fields["动作"].currentText()
+        user_remark = self.meta_fields["备注"].text()
         meta_data = {
             "姓名": user_name,
             "年龄": user_age,
             "性别": user_gender,
             "身高(cm)": user_height,
             "体重(kg)": user_weight,
-            "血压（高压）": user_blood_pressure_high,
-            "血压（低压）": user_blood_pressure_low,
-            "心率": user_heart_rate,
-            "状态": user_state
+            "动作": user_state,
+            "备注": user_remark
         }
         # 如果传入了force_meta_data，则更新meta_data
         if force_meta_data is not None:
@@ -421,7 +410,6 @@ class MainWindow(QWidget):
     def closeEvent(self, event):
         # 关闭程序时释放摄像头资源
         BaseDevice.stop_all()
-        cv2.destroyAllWindows()
         event.accept()
         print("程序已关闭")
     
@@ -435,23 +423,14 @@ class MainWindow(QWidget):
         devices_configs : Dict[Type[BaseDevice], List[Dict[str, Any]]]
         devices_configs = {
             FFmpegDevice:[
-                # {
-                # "device_name":f"{camera_name}", 
-                # "camera_name":camera_name, 
-                # **camera_params[camera_name]
-                # } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
-            ],
-            OrbbecDevice: [
-            #    {"device_name":"orbbec_depth_camera", "frame_type":"depth", "frame_rate":30},
-            ],
-            PPGDevice: [
-               {"device_name":"ppg", "port":"COM6", "frame_rate":1000}
-            ],
-            UwbDevice: [
-            #    {"device_name":"uwb", "port":"COM4", "frame_rate":100}
+                {
+                "device_name":f"{camera_name}", 
+                "camera_name":camera_name, 
+                **camera_params[camera_name]
+                } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
             ],
             MilliWaveDevice: [
-            #    {"device_name":"milliwave", "port":"COM5", "frame_rate":110, "baud_rate":2000000}
+                {"device_name":"milliwave", "port":"COM4", "frame_rate":5, "baudrate":3000000, "save_points_len":300, "max_save_time":120}
             ],
         }
 

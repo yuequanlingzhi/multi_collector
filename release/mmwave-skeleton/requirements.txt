@@ -1,0 +1,7 @@
+opencv-python
+PyQt5
+pygrabber
+numpy
+av
+pyserial
+open3d

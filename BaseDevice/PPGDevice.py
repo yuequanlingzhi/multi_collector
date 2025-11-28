@@ -102,9 +102,9 @@ class PPGDevice(BaseDevice):
         min_val1, max_val1 = np.min(ch1_data), np.max(ch1_data)
         min_val2, max_val2 = np.min(ch2_data), np.max(ch2_data)
         if max_val1 == min_val1:
-            max_val += 1  # 防止除零
+            max_val1 += 1  # 防止除零
         if max_val2 == min_val2:
-            max_val += 1  # 防止除零
+            max_val2 += 1  # 防止除零
 
         scale1 = (height * 0.8) / (max_val1 - min_val1)
         offset1 = height * 0.1
@@ -112,15 +112,18 @@ class PPGDevice(BaseDevice):
         scale2 = (height * 0.8) / (max_val2 - min_val2)
         offset2 = height * 0.1
 
-
         ch1_y = height - ((ch1_data - min_val1) * scale1 + offset1).astype(np.int32)
         ch2_y = height - ((ch2_data - min_val2) * scale2 + offset2).astype(np.int32)
 
         x = np.arange(length)
 
-        for i in range(length - 1):
-            cv2.line(img, (x[i], ch1_y[i]), (x[i+1], ch1_y[i+1]), (0, 255, 0), 1) 
-            cv2.line(img, (x[i], ch2_y[i]), (x[i+1], ch2_y[i+1]), (0, 0, 255), 1)  
+        # 将x和y坐标组合成点数组
+        points1 = np.column_stack((x, ch1_y)).astype(np.int32)
+        points2 = np.column_stack((x, ch2_y)).astype(np.int32)
+
+        # 使用polylines一次性绘制整条线
+        cv2.polylines(img, [points1], isClosed=False, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+        cv2.polylines(img, [points2], isClosed=False, color=(0, 0, 255), thickness=2, lineType=cv2.LINE_AA)
 
         cv2.putText(img, 'CH1', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,255,0), 2)
         cv2.putText(img, 'CH2', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
