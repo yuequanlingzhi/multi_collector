@@ -430,7 +430,7 @@ class MainWindow(QWidget):
                 } for i, camera_name in enumerate(camera_devices_list) if camera_name in camera_params.keys() 
             ],
             MilliWaveDevice: [
-                {"device_name":"milliwave", "port":"COM4", "frame_rate":5, "baudrate":3000000, "save_points_len":300, "max_save_time":120}
+                {"device_name":"milliwave", "port":"COM3", "frame_rate":5, "baudrate":3000000, "save_points_len":300, "max_save_time":120}
             ],
         }
 
